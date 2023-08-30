@@ -24,6 +24,9 @@
 	<li>Unlocking with num buttons and open lock: There are 2 options to disarm - 1: Disarm normally with normal pin code und press unlock button - 2: Disarm in emergency mode -&gt; disarms system normally but triggers an additional action that can be configured</li>
 </ul>
 
+<h3>Beeping</h3>
+<p>When arming, the beeping sound is only configured in armed away mode. Night Mode is arming too, but silent. Home has no arming and therefore no beeping. Pending/Trigger also has no sound.</p>
+
 <h3>Switching between arm profiles</h3>
 
 <p>There is a specific behaviour for switching between arm modes:</p>
