@@ -1,0 +1,160 @@
+blueprint:
+    name: Alarm Keypad (Frient/Develco KEPZB-110)
+    description: Adds support for Frient/Develco KEPZB-110 key pad. Special thanks to AndrejDelany for a lot of code.
+    domain: automation
+    author: crijun
+  
+    input:
+      z2m_keypad_path:
+        name: Key pad path
+        description: 'Key pad friendly name with zigbee2mqtt/ prefix, e.g.: zigbee2mqtt/EntranceKeyPad'
+      z2m_keypad_path_set:
+        name: Key pad communication path
+        description: 'Key pad path with /set appended, e.g. zigbee2mqtt/EntranceKeyPad/set'
+      control_panel:
+        name: Control Panel
+        description: 'Select alarm control panel, has to be enabled in configuration.yaml first'
+        default: []
+        selector:
+          entity:
+            domain:
+            - alarm_control_panel
+            multiple: false
+      pin:
+        name: Pincode to disarm
+        description: 'Pin code to disarm the alarm system'
+      pin_silent_alarm:
+        name: Silent Alarm Pin
+        description: 'Disarms the home alarm system but custom action can be performed'
+      action_silent_alarm:
+        name: Silent Alarm Action
+        description: An action to be performed the silent alarm pin is entered instead of the normal pin
+        default: []
+        selector:
+          action: {}
+      action_emergency:
+        name: Action Panic
+        description: Action to perform if SOS function is activated by pressing SOS button 3 times in a row quickly
+        default: []
+        selector:
+          action: {}
+
+  
+variables:
+  pin_var: !input pin
+  pin_silent_alarm_var: !input pin_silent_alarm
+
+trigger:
+- platform: mqtt
+  topic: !input z2m_keypad_path
+  id: keypad_mqtt
+
+condition: []
+
+action:
+- choose:
+  - conditions:
+    - condition: trigger
+      id: keypad_mqtt
+    sequence:
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_transaction != null and trigger.payload_json.action_code == pin_var }}'
+        sequence:
+        - service: mqtt.publish
+          data:
+            topic: !input z2m_keypad_path_set
+            payload: "{\n \"arm_mode\": \n  {\n    \"transaction\": \"{{ trigger.payload_json.action_transaction
+              }}\",\n    \"mode\": \"{{ trigger.payload_json.action }}\"\n  }\n}"
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_transaction != null and trigger.payload_json.action_code == pin_silent_alarm_var }}'
+        sequence:
+        - choose:
+          default: !input action_silent_alarm
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action == "arm_all_zones" }}'
+        - condition: or
+          conditions:
+          - condition: state
+            entity_id: alarm_control_panel.home_alarm
+            state: disarmed
+          - condition: state
+            entity_id: alarm_control_panel.home_alarm
+            state: armed_home
+          - condition: state
+            entity_id: alarm_control_panel.home_alarm
+            state: armed_night
+        sequence:
+        - service: alarm_control_panel.alarm_arm_away
+          target:
+            entity_id: !input control_panel
+          data:
+            code: !input pin
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action == "arm_day_zones" }}'
+        - condition: or
+          conditions:
+          - condition: state
+            entity_id: alarm_control_panel.home_alarm
+            state: disarmed
+          - condition: state
+            entity_id: alarm_control_panel.home_alarm
+            state: armed_night
+        sequence:
+        - service: alarm_control_panel.alarm_arm_home
+          target:
+            entity_id: !input control_panel
+          data:
+            code: !input pin
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action == "arm_night_zones" }}'
+        - condition: or
+          conditions:
+          - condition: state
+            entity_id: alarm_control_panel.home_alarm
+            state: disarmed
+          - condition: state
+            entity_id: alarm_control_panel.home_alarm
+            state: armed_home
+        sequence:
+        - service: alarm_control_panel.alarm_arm_night
+          target:
+            entity_id: !input control_panel
+          data:
+            code: !input pin
+      - conditions:
+        - condition: template
+          value_template: '{{ ( trigger.payload_json.action_code == pin_var or trigger.payload_json.action_code == pin_silent_alarm_var ) and trigger.payload_json.action == "disarm" }}'
+        sequence:
+        - service: alarm_control_panel.alarm_disarm
+          target:
+            entity_id: !input control_panel
+          data:
+            code: !input pin
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action == "emergency" }}'
+        sequence:
+        - choose:
+          default: !input action_emergency
+      - conditions:
+        - condition: template
+          value_template: '{{ trigger.payload_json.action_code != pin_var and trigger.payload_json.action_code
+            | int(-1) != -1 }}'
+        sequence:
+        - service: mqtt.publish
+          data:
+            topic: !input z2m_keypad_path_set
+            payload: "{\n \"arm_mode\": \n  {\n   \"transaction\": \"{{ trigger.payload_json.action_transaction
+              }}\",\n   \"mode\": \"invalid_code\"\n  }\n}"
+      default: []
+  default: []
+mode: parallel
+max: 10
