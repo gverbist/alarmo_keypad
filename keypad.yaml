@@ -1,6 +1,9 @@
+# Special thanks to AndrejDelany for a lot of code.
+# https://community.home-assistant.io/t/zigbee2mqtt-sync-keypad-and-with-alarm-control-panel-states/345311
+
 blueprint:
     name: Alarm Keypad (Frient/Develco KEPZB-110)
-    description: Adds support for Frient/Develco KEPZB-110 key pad. Special thanks to AndrejDelany for a lot of code.
+    description: Adds support for Frient/Develco KEPZB-110 key pad. 
     domain: automation
     author: crijun
   
@@ -48,11 +51,50 @@ trigger:
 - platform: mqtt
   topic: !input z2m_keypad_path
   id: keypad_mqtt
+- platform: state
+  entity_id: !input control_panel
+  to: armed_away
+  id: state_change_alarm_armed_away
+- platform: state
+  entity_id: !input control_panel
+  to: armed_night
+  id: state_change_alarm_armed_night
+- platform: state
+  entity_id: !input control_panel
+  to: armed_home
+  id: state_change_alarm_armed_home
 
 condition: []
 
 action:
 - choose:
+  - conditions:
+    - condition: trigger
+      id: state_change_alarm_armed_away
+    sequence:
+    - service: mqtt.publish
+      data:
+        topic: !input z2m_keypad_path_set
+        payload: "{\n \"arm_mode\": \n  {\n   \"mode\": \"arm_all_zones\"\n
+          \ }\n}"
+  - conditions:
+    - condition: trigger
+      id: state_change_alarm_armed_night
+    sequence:
+    - service: mqtt.publish
+      data:
+        topic: !input z2m_keypad_path_set
+        payload: "{\n \"arm_mode\": \n  {\n   \"mode\": \"arm_night_zones\"\n
+          \ }\n}"
+  - conditions:
+    - condition: trigger
+      id: state_change_alarm_armed_home
+    sequence:
+    - service: mqtt.publish
+      data:
+        topic: !input z2m_keypad_path_set
+        payload: "{\n \"arm_mode\": \n  {\n   \"mode\": \"arm_day_zones\"\n
+          \ }\n}"
   - conditions:
     - condition: trigger
       id: keypad_mqtt
@@ -95,6 +137,10 @@ action:
             entity_id: !input control_panel
           data:
             code: !input pin
+        - service: mqtt.publish
+          data:
+            topic: !input z2m_keypad_path_set
+            payload: "{\n \"arm_mode\": \n  {\n   \"mode\": \"exit_delay\"\n  }\n}"
       - conditions:
         - condition: template
           value_template: '{{ trigger.payload_json.action == "arm_day_zones" }}'
@@ -138,6 +184,10 @@ action:
             entity_id: !input control_panel
           data:
             code: !input pin
+        - service: mqtt.publish
+          data:
+            topic: !input z2m_keypad_path_set
+            payload: "{\n \"arm_mode\": \n  {\n    \"mode\": \"disarm\"\n  }\n}"
       - conditions:
         - condition: template
           value_template: '{{ trigger.payload_json.action == "emergency" }}'
