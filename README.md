@@ -10,6 +10,10 @@
 
 <p>I want to build an alarm system. Since most of my devices are Zigbee based, I baught a Frient/Develco KEPZB-110 key pad. Found Code which worked from gibhub user AndrejDelany, but it had some things missing (e.g. night arm), some things which I just didn&#39;t like (use code to arm, no night arm mode, SOS button didn&#39;t work, etc.). So I copied the code, minified it and adapted it to my needs. Feel free to steal my code if you want to adapt it. :)</p>
 
+<h3>Requirement</h3>
+
+<p>zigbee2mqtt</p>
+
 <h3>Behaviour</h3>
 
 <p>You don&#39;t need a code to arm it. I hate overhead.</p>
