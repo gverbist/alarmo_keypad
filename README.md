@@ -33,3 +33,19 @@
 	<li>Home/Night-&gt;Away: You can switch with a button press without having to disarm first</li>
 	<li>Away-&gt;Home/Night: Needs to be disarmed first before being able to change</li>
 </ul>
+
+<h3>Actions on arm states</h3>
+
+<p>The only actions you can configure in the blueprint are the:</p>
+
+<ul>
+	<li>SOS button</li>
+	<li>Emergency pin code action</li>
+</ul>
+
+<p>Actions for home/night/away states are not configurable since I have a seperate Automation which gets called when the state of the alarm changes. I just like it better to split it up.&nbsp;</p>
+
+<h3>Questions?</h3>
+
+<p>I have a forum post in HA forum. Feel free to suggest other ideas but I will only add things if I need it for my system since I want to have everything as minimal as possible. Also I am very new to home automation/assistant... yesterday I didn&#39;t even know what a blueprint is so please don&#39;t rely too much on it without looking at it first ;)</p>
+
