@@ -21,7 +21,7 @@ blueprint:
         selector:
           entity:
             domain:
-            - alarm_control_panel
+            - alarm_control_panel.alarmo
             multiple: false
       pin:
         name: Pincode to disarm
